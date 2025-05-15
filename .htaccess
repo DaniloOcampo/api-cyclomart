@@ -1,0 +1,15 @@
+# Activar mod_rewrite para permitir URLs amigables
+RewriteEngine On
+
+# Opcional: Redirigir todas las peticiones a index.php si no son archivos o carpetas reales
+# Descomenta estas líneas si usas rutas tipo /api/registrar en lugar de registrar_usuario.php
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^ index.php [QSA,L]
+
+# Forzar UTF-8
+AddDefaultCharset UTF-8
+
+# Mostrar errores (desactiva en producción)
+php_flag display_errors on
+php_value error_reporting 32767
