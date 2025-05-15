@@ -22,7 +22,7 @@ $contrasena = $data->contrasena;
 $contrasena_encriptada = password_hash($contrasena, PASSWORD_DEFAULT);
 
 $sql = "INSERT INTO usuarios (nombre, apellido, correo, contrasena, documento) VALUES (?, ?, ?, ?, ?)";
-$stmt = $conn->prepare($sql);
+$stmt = $mysqli->prepare($sql);
 
 if ($stmt === false) {
     echo json_encode(["status" => "error", "mensaje" => "Error en la preparación de la consulta"]);
@@ -38,6 +38,5 @@ if ($stmt->execute()) {
 }
 
 $stmt->close();
-$conn->close();
+$mysqli->close();
 ?>
-

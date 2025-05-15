@@ -1,15 +1,18 @@
 <?php
-$servername = "sql202.infinityfree.com";
-$username = "if0_38987147";
-$password = "6Xw83ovxuR";
-$dbname = "if0_38987147_cyclomart";  // Aquí reemplaza XXX por el nombre exacto de tu base de datos
+$host = "tramway.proxy.rlwy.net";
+$port = 18242;
+$user = "root";
+$password = "ScxxoIjnbZsCbLEkoEWqbpMoZcuqhFtJ"; // Cambia esto por tu contraseña real
+$dbname = "railway";
 
 // Crear conexión
-$conn = new mysqli($servername, $username, $password, $dbname);
+$mysqli = new mysqli($host, $user, $password, $dbname, $port);
 
 // Verificar conexión
-if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
+if ($mysqli->connect_error) {
+    die("Error de conexión: " . $mysqli->connect_error);
 }
-?>
 
+// Opcional: establecer charset
+$mysqli->set_charset("utf8");
+?>

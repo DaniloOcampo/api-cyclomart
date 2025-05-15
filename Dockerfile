@@ -1,12 +1,12 @@
-FROM php:8.2-cli
+FROM php:8.2-apache
 
+# Instalar extensiones necesarias
+RUN docker-php-ext-install mysqli
 
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+# Copiar todo el código al directorio por defecto de apache
+COPY . /var/www/html/
 
-WORKDIR /var/www/html
+# Exponer puerto 80 para Apache
+EXPOSE 80
 
-COPY . .
-
-EXPOSE 10000
-
-CMD ["php", "-S", "0.0.0.0:10000"]
+# El comando CMD se omite porque la imagen ya inicia Apache

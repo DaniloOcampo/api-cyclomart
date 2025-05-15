@@ -22,7 +22,7 @@ $correo = $data->correo;
 $contrasena = $data->contrasena;
 
 $sql = "SELECT * FROM usuarios WHERE correo = ?";
-$stmt = $conn->prepare($sql);
+$stmt = $mysqli->prepare($sql);
 if ($stmt === false) {
     echo json_encode(["status" => "error", "mensaje" => "Error en la preparación de la consulta"]);
     exit();
@@ -49,5 +49,5 @@ if (password_verify($contrasena, $user['contrasena'])) {
 }
 
 $stmt->close();
-$conn->close();
+$mysqli->close();
 ?>
