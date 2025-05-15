@@ -1,10 +1,8 @@
-# Definir los archivos índice que Apache debe buscar
-DirectoryIndex index.php index.html
-
-# Activar mod_rewrite para URLs amigables (si está habilitado en el servidor)
+# Activar motor de reescritura
 RewriteEngine On
 
-# Opcional: redirigir todo a index.php (descomenta si usas rutas tipo /api/registrar)
+# Redirigir todas las rutas a index.php si no son archivos o carpetas
+# (descomenta si usas rutas tipo /api/login en lugar de login.php)
 # RewriteCond %{REQUEST_FILENAME} !-f
 # RewriteCond %{REQUEST_FILENAME} !-d
 # RewriteRule ^ index.php [QSA,L]
@@ -12,6 +10,9 @@ RewriteEngine On
 # Forzar codificación UTF-8
 AddDefaultCharset UTF-8
 
-# Mostrar errores (solo para desarrollo, quitar en producción)
+# Mostrar errores (solo en desarrollo)
 php_flag display_errors on
 php_value error_reporting 32767
+
+# Priorizar index.php como archivo de inicio
+DirectoryIndex index.php index.html

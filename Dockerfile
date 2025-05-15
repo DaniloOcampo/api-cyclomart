@@ -1,19 +1,21 @@
-FROM php:8.2-apache
+# Imagen base de PHP con Apache
+FROM php:8.1-apache
 
-# Copiar todos los archivos de tu proyecto al directorio web
-COPY . /var/www/html/
+# Instalar MySQLi y extensiones necesarias
+RUN docker-php-ext-install mysqli
 
-# Habilitar mod_rewrite para usar RewriteEngine en .htaccess
+# Activar mod_rewrite de Apache
 RUN a2enmod rewrite
 
-# Opcional: dar permisos correctos (ajusta según necesidad)
+# Copiar los archivos de tu proyecto al contenedor
+COPY . /var/www/html/
+
+# Dar permisos a los archivos
 RUN chown -R www-data:www-data /var/www/html
 
-# Exponer el puerto 10000 (igual que usabas antes)
-EXPOSE 10000
+# Habilitar errores en desarrollo
+RUN echo "display_errors=On" >> /usr/local/etc/php/conf.d/docker-php.ini && \
+    echo "error_reporting=E_ALL" >> /usr/local/etc/php/conf.d/docker-php.ini
 
-# Cambiar configuración Apache para permitir .htaccess
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
-
-# Iniciar Apache en modo foreground (esto es lo que Render usará para levantar el contenedor)
-CMD ["apache2-foreground"]
+# Puerto por defecto
+EXPOSE 80
