@@ -1,5 +1,14 @@
 <?php
-header("Content-Type: application/json");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 include 'db.php';
 
 $data = json_decode(file_get_contents("php://input"));
@@ -33,6 +42,7 @@ $user = $result->fetch_assoc();
 
 // Verificar la contraseña
 if (password_verify($contrasena, $user['contrasena'])) {
+    unset($user['contrasena']); // No enviar la contraseña al cliente
     echo json_encode(["status" => "ok", "mensaje" => "Login exitoso", "usuario" => $user]);
 } else {
     echo json_encode(["status" => "error", "mensaje" => "Contraseña incorrecta"]);
