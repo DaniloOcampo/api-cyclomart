@@ -1,15 +1,17 @@
-# Activar mod_rewrite para permitir URLs amigables
+# Definir los archivos índice que Apache debe buscar
+DirectoryIndex index.php index.html
+
+# Activar mod_rewrite para URLs amigables (si está habilitado en el servidor)
 RewriteEngine On
 
-# Opcional: Redirigir todas las peticiones a index.php si no son archivos o carpetas reales
-# Descomenta estas líneas si usas rutas tipo /api/registrar en lugar de registrar_usuario.php
+# Opcional: redirigir todo a index.php (descomenta si usas rutas tipo /api/registrar)
 # RewriteCond %{REQUEST_FILENAME} !-f
 # RewriteCond %{REQUEST_FILENAME} !-d
 # RewriteRule ^ index.php [QSA,L]
 
-# Forzar UTF-8
+# Forzar codificación UTF-8
 AddDefaultCharset UTF-8
 
-# Mostrar errores (desactiva en producción)
+# Mostrar errores (solo para desarrollo, quitar en producción)
 php_flag display_errors on
 php_value error_reporting 32767
