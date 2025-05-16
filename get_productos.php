@@ -9,7 +9,7 @@ include 'db.php';
 $mysqli->set_charset("utf8");
 
 $sql = "SELECT productos.id, productos.nombre, productos.precio, productos.imagen, 
-               productos.descripcion, productos.marca, categorias.nombre AS categoria 
+               productos.descripcion, productos.tipo, categorias.nombre AS categoria 
         FROM productos
         JOIN categorias ON productos.categoria_id = categorias.id";
 
