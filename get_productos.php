@@ -8,6 +8,9 @@ include 'db.php';
 // En db.php definimos $mysqli
 $mysqli->set_charset("utf8");
 
+// Cambia esta URL por la tuya si cambia el dominio
+$base_url = "https://api-cyclomart-1.onrender.com/";
+
 $sql = "SELECT productos.id, productos.nombre, productos.precio, productos.imagen, 
                productos.descripcion, productos.tipo, categorias.nombre AS categoria 
         FROM productos
@@ -18,6 +21,10 @@ $result = $mysqli->query($sql);
 if ($result) {
     $productos = array();
     while ($row = $result->fetch_assoc()) {
+        // Concatenar la URL completa de la imagen
+        if (!empty($row['imagen'])) {
+            $row['imagen'] = $base_url . $row['imagen'];
+        }
         $productos[] = $row;
     }
     echo json_encode($productos);
@@ -28,3 +35,4 @@ if ($result) {
 
 $mysqli->close();
 ?>
+
