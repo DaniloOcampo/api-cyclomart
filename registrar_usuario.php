@@ -21,6 +21,26 @@ $contrasena = $data->contrasena;
 
 $contrasena_encriptada = password_hash($contrasena, PASSWORD_DEFAULT);
 
+// Verificar si el correo ya existe
+$checkSql = "SELECT id FROM usuarios WHERE correo = ?";
+$checkStmt = $mysqli->prepare($checkSql);
+if ($checkStmt === false) {
+    echo json_encode(["status" => "error", "mensaje" => "Error en la preparación de la consulta de verificación"]);
+    exit();
+}
+$checkStmt->bind_param("s", $correo);
+$checkStmt->execute();
+$checkStmt->store_result();
+
+if ($checkStmt->num_rows > 0) {
+    echo json_encode(["status" => "error", "mensaje" => "El correo ya está registrado"]);
+    $checkStmt->close();
+    $mysqli->close();
+    exit();
+}
+$checkStmt->close();
+
+// Insertar nuevo usuario
 $sql = "INSERT INTO usuarios (nombre, apellido, correo, contrasena, documento) VALUES (?, ?, ?, ?, ?)";
 $stmt = $mysqli->prepare($sql);
 
@@ -40,3 +60,4 @@ if ($stmt->execute()) {
 $stmt->close();
 $mysqli->close();
 ?>
+
