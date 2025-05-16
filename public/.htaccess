@@ -1,11 +1,13 @@
 # Activar motor de reescritura
 RewriteEngine On
 
-# Redirigir todas las rutas a index.php si no son archivos o carpetas
-# (descomenta si usas rutas tipo /api/login en lugar de login.php)
-# RewriteCond %{REQUEST_FILENAME} !-f
-# RewriteCond %{REQUEST_FILENAME} !-d
-# RewriteRule ^ index.php [QSA,L]
+# Permitir acceso directo a archivos y carpetas existentes
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Redirigir todo lo demás a index.php
+RewriteRule ^ index.php [QSA,L]
 
 # Forzar codificación UTF-8
 AddDefaultCharset UTF-8
