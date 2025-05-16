@@ -4,18 +4,6 @@ RewriteEngine On
 # Forzar UTF-8
 AddDefaultCharset UTF-8
 
-# Permitir acceso a imágenes
-<IfModule mod_alias.c>
-    # Solo necesario si hay conflictos, opcional
-    Alias /imagenes_bicicletas /var/www/html/imagenes_bicicletas
-</IfModule>
-
-<Directory "/var/www/html/imagenes_bicicletas">
-    Options Indexes FollowSymLinks
-    AllowOverride All
-    Require all granted
-</Directory>
-
 # Opcional: redirigir URLs amigables a index.php (si usas rutas tipo /api/login)
 # RewriteCond %{REQUEST_FILENAME} !-f
 # RewriteCond %{REQUEST_FILENAME} !-d
