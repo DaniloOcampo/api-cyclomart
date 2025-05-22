@@ -12,7 +12,7 @@ $mysqli->set_charset("utf8");
 $base_url = "https://api-cyclomart-1.onrender.com/";
 
 $sql = "SELECT productos.id, productos.nombre, productos.precio, productos.imagen, 
-               productos.descripcion, productos.tipo, categorias.nombre AS categoria 
+               productos.descripcion, productos.tipo, productos.stock, categorias.nombre AS categoria 
         FROM productos
         JOIN categorias ON productos.categoria_id = categorias.id";
 
