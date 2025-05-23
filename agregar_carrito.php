@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-include 'conexion.php'; // Asegúrate de tener conexión activa en $conn
+include 'db.php'; // Asegúrate de tener conexión activa en $conn
 
 $id_usuario = intval($_POST['id_usuario'] ?? 0);
 $id_producto = intval($_POST['id_producto'] ?? 0);
