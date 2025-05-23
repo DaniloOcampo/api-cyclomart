@@ -18,6 +18,7 @@ if ($id_usuario <= 0 || $id_producto <= 0) {
 $mysqli->begin_transaction();
 
 try {
+    // Verificar stock con FOR UPDATE
     $sql = "SELECT stock FROM productos WHERE id = ? FOR UPDATE";
     $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("i", $id_producto);
@@ -34,6 +35,9 @@ try {
         throw new Exception('Sin stock disponible');
     }
 
+    $stmt->close(); // Cerrar el primer statement
+
+    // Insertar o actualizar carrito
     $sql = "INSERT INTO carrito (id_usuario, id_producto, cantidad)
             VALUES (?, ?, 1)
             ON DUPLICATE KEY UPDATE cantidad = cantidad + 1";
@@ -43,6 +47,9 @@ try {
         throw new Exception('Error al guardar en el carrito');
     }
 
+    $stmt->close(); // Cerrar el segundo statement
+
+    // Actualizar stock
     $sql = "UPDATE productos SET stock = stock - 1 WHERE id = ?";
     $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("i", $id_producto);
@@ -50,6 +57,7 @@ try {
         throw new Exception('Error al actualizar el stock');
     }
 
+    $stmt->close(); // Cerrar el tercer statement
     $mysqli->commit();
 
     echo json_encode(['success' => true, 'message' => 'Producto añadido al carrito']);
@@ -57,3 +65,7 @@ try {
     $mysqli->rollback();
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
+
+$mysqli->close(); // ✅ Cerrar la conexión siempre al final
+?>
+

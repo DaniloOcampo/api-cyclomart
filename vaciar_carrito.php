@@ -20,4 +20,5 @@ if ($stmt->execute()) {
 }
 
 $stmt->close();
+$mysqli->close(); // ✅ Faltaba esto
 ?>

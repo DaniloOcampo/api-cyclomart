@@ -29,5 +29,8 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
+// Cierra el statement y la conexión
+$stmt->close();
+$mysqli->close();
+
 echo json_encode(['success' => true, 'carrito' => $carrito]);
-?>
