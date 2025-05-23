@@ -13,7 +13,7 @@ $sql = "SELECT c.id_producto, p.nombre, p.precio, c.cantidad
         FROM carrito c
         JOIN productos p ON c.id_producto = p.id
         WHERE c.id_usuario = ?";
-$stmt = $conn->prepare($sql);
+$stmt = $mysqli->prepare($sql);
 $stmt->bind_param("i", $id_usuario);
 $stmt->execute();
 $result = $stmt->get_result();

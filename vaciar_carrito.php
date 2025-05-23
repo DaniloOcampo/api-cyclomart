@@ -10,7 +10,7 @@ if ($id_usuario <= 0) {
 }
 
 $sql = "DELETE FROM carrito WHERE id_usuario = ?";
-$stmt = $conn->prepare($sql);
+$stmt = $mysqli->prepare($sql);
 $stmt->bind_param("i", $id_usuario);
 
 if ($stmt->execute()) {
@@ -18,4 +18,6 @@ if ($stmt->execute()) {
 } else {
     echo json_encode(['success' => false, 'message' => 'Error al vaciar carrito']);
 }
+
+$stmt->close();
 ?>

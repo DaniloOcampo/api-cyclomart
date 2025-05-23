@@ -15,7 +15,7 @@ if (!$id_usuario || !$id_producto || !$cantidad) {
 }
 
 $sql = "UPDATE carrito SET cantidad = ? WHERE usuario_id = ? AND producto_id = ?";
-$stmt = $conn->prepare($sql);
+$stmt = $mysqli->prepare($sql);
 $stmt->bind_param("iii", $cantidad, $id_usuario, $id_producto);
 
 if ($stmt->execute()) {
@@ -31,5 +31,5 @@ if ($stmt->execute()) {
 }
 
 $stmt->close();
-$conn->close();
+$mysqli->close();
 ?>

@@ -1,6 +1,11 @@
 <?php
 header('Content-Type: application/json');
-include 'db.php'; // Asegúrate de tener conexión activa en $conn
+require_once 'db.php';
+
+if (!$mysqli) {
+    echo json_encode(['success' => false, 'message' => 'No hay conexión a la base de datos']);
+    exit;
+}
 
 $id_usuario = intval($_POST['id_usuario'] ?? 0);
 $id_producto = intval($_POST['id_producto'] ?? 0);
@@ -10,12 +15,11 @@ if ($id_usuario <= 0 || $id_producto <= 0) {
     exit;
 }
 
-$conn->begin_transaction();
+$mysqli->begin_transaction();
 
 try {
-    // 1. Verificar stock
     $sql = "SELECT stock FROM productos WHERE id = ? FOR UPDATE";
-    $stmt = $conn->prepare($sql);
+    $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("i", $id_producto);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -30,30 +34,26 @@ try {
         throw new Exception('Sin stock disponible');
     }
 
-    // 2. Insertar o actualizar carrito
     $sql = "INSERT INTO carrito (id_usuario, id_producto, cantidad)
             VALUES (?, ?, 1)
             ON DUPLICATE KEY UPDATE cantidad = cantidad + 1";
-    $stmt = $conn->prepare($sql);
+    $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("ii", $id_usuario, $id_producto);
     if (!$stmt->execute()) {
         throw new Exception('Error al guardar en el carrito');
     }
 
-    // 3. Descontar 1 del stock
     $sql = "UPDATE productos SET stock = stock - 1 WHERE id = ?";
-    $stmt = $conn->prepare($sql);
+    $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("i", $id_producto);
     if (!$stmt->execute()) {
         throw new Exception('Error al actualizar el stock');
     }
 
-    $conn->commit();
+    $mysqli->commit();
 
     echo json_encode(['success' => true, 'message' => 'Producto añadido al carrito']);
 } catch (Exception $e) {
-    $conn->rollback();
+    $mysqli->rollback();
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
-
-?>
