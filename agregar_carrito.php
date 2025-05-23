@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-require_once 'db.php';
+include 'db.php';
 
 if (!$mysqli) {
     echo json_encode(['success' => false, 'message' => 'No hay conexión a la base de datos']);
