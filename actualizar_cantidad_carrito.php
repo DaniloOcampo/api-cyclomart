@@ -1,11 +1,11 @@
 <?php
-require '../conexion.php';
+include 'db.php';
 
 header('Content-Type: application/json');
 
 // Obtener los parámetros del cuerpo de la solicitud
-$id_usuario = $_POST['usuario_id'] ?? null;
-$id_producto = $_POST['producto_id'] ?? null;
+$id_usuario = $_POST['id_usuario'] ?? null;
+$id_producto = $_POST['id_producto'] ?? null;
 $cantidad = $_POST['cantidad'] ?? null;
 
 // Validación estricta con comparación tipo-strict para evitar falsos negativos (como cantidad = 0)
@@ -34,3 +34,4 @@ if ($resultado) {
     ]);
 }
 ?>
+

@@ -1,11 +1,11 @@
 <?php
-header("Content-Type: application/json");
 include 'db.php';
+header("Content-Type: application/json");
 
-$id_usuario = isset($_POST['usuario_id']) ? (int)$_POST['usuario_id'] : null;
-$id_producto = isset($_POST['producto_id']) ? (int)$_POST['producto_id'] : null;
+$id_usuario = $_POST['id_usuario'] ?? null;
+$id_producto = $_POST['id_producto'] ?? null;
 
-if (!$id_usuario || !$id_producto) {
+if ($id_usuario === null || $id_producto === null) {
     echo json_encode([
         "success" => false,
         "message" => "Faltan parámetros obligatorios."
@@ -32,4 +32,3 @@ if ($stmt->execute()) {
 $stmt->close();
 $mysqli->close();
 ?>
-
