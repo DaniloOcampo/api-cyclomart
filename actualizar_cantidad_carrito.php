@@ -1,12 +1,15 @@
 <?php
-header("Content-Type: application/json");
-include 'db.php';
+require '../conexion.php';
 
+header('Content-Type: application/json');
+
+// Obtener los parámetros del cuerpo de la solicitud
 $id_usuario = $_POST['usuario_id'] ?? null;
 $id_producto = $_POST['producto_id'] ?? null;
 $cantidad = $_POST['cantidad'] ?? null;
 
-if (!$id_usuario || !$id_producto || !$cantidad) {
+// Validación estricta con comparación tipo-strict para evitar falsos negativos (como cantidad = 0)
+if ($id_usuario === null || $id_producto === null || $cantidad === null) {
     echo json_encode([
         "success" => false,
         "message" => "Faltan parámetros obligatorios."
@@ -14,11 +17,12 @@ if (!$id_usuario || !$id_producto || !$cantidad) {
     exit;
 }
 
+// Actualizar la cantidad del producto en el carrito
 $sql = "UPDATE carrito SET cantidad = ? WHERE usuario_id = ? AND producto_id = ?";
-$stmt = $mysqli->prepare($sql);
-$stmt->bind_param("iii", $cantidad, $id_usuario, $id_producto);
+$stmt = $conn->prepare($sql);
+$resultado = $stmt->execute([$cantidad, $id_usuario, $id_producto]);
 
-if ($stmt->execute()) {
+if ($resultado) {
     echo json_encode([
         "success" => true,
         "message" => "Cantidad actualizada correctamente."
@@ -29,7 +33,4 @@ if ($stmt->execute()) {
         "message" => "Error al actualizar la cantidad."
     ]);
 }
-
-$stmt->close();
-$mysqli->close();
 ?>
