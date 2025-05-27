@@ -2,8 +2,8 @@
 header("Content-Type: application/json");
 include 'db.php';
 
-$id_usuario = $_POST['usuario_id'] ?? null;
-$id_producto = $_POST['producto_id'] ?? null;
+$id_usuario = isset($_POST['usuario_id']) ? (int)$_POST['usuario_id'] : null;
+$id_producto = isset($_POST['producto_id']) ? (int)$_POST['producto_id'] : null;
 
 if (!$id_usuario || !$id_producto) {
     echo json_encode([
@@ -32,3 +32,4 @@ if ($stmt->execute()) {
 $stmt->close();
 $mysqli->close();
 ?>
+
