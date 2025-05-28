@@ -13,7 +13,7 @@ if ($id_usuario === null || $id_producto === null) {
     exit;
 }
 
-$sql = "DELETE FROM carrito WHERE usuario_id = ? AND producto_id = ?";
+$sql = "DELETE FROM carrito WHERE id_usuario = ? AND id_producto = ?";
 $stmt = $mysqli->prepare($sql);
 $stmt->bind_param("ii", $id_usuario, $id_producto);
 

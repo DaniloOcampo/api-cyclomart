@@ -37,7 +37,7 @@ if ($cantidad > $stockDisponible) {
 }
 
 // Actualizar cantidad
-$sql = "UPDATE carrito SET cantidad = ? WHERE usuario_id = ? AND producto_id = ?";
+$sql = "UPDATE carrito SET cantidad = ? WHERE id_usuario = ? AND id_producto = ?";
 $stmt = $mysqli->prepare($sql);
 $stmt->bind_param("iii", $cantidad, $id_usuario, $id_producto);
 
