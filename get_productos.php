@@ -27,16 +27,12 @@ $sql = "
         GREATEST(
             p.stock 
             - IFNULL((
-                SELECT SUM(c2.cantidad) 
-                FROM carrito c2 
+                SELECT SUM(c2.cantidad)
+                FROM carrito c2
                 WHERE 
-                    c2.id_producto = p.id 
+                    c2.id_producto = p.id
+                    AND c2.id_usuario != ?
                     AND TIMESTAMPDIFF(MINUTE, c2.fecha, NOW()) <= ?
-            ), 0)
-            + IFNULL((
-                SELECT cantidad 
-                FROM carrito 
-                WHERE id_usuario = ? AND id_producto = p.id
             ), 0),
         0) AS stock_disponible
     FROM productos p
@@ -44,7 +40,7 @@ $sql = "
 ";
 
 $stmt = $mysqli->prepare($sql);
-$stmt->bind_param("ii", $minutos_expiracion, $id_usuario);
+$stmt->bind_param("ii", $id_usuario, $minutos_expiracion);
 $stmt->execute();
 $result = $stmt->get_result();
 
