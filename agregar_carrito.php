@@ -15,21 +15,19 @@ if ($id_usuario <= 0 || $id_producto <= 0) {
     exit;
 }
 
-// 1. Consultar stock total
+// 1. Obtener stock total
 $stmt = $mysqli->prepare("SELECT stock FROM productos WHERE id = ?");
 $stmt->bind_param("i", $id_producto);
 $stmt->execute();
 $result = $stmt->get_result();
-
 if ($result->num_rows === 0) {
     echo json_encode(['success' => false, 'message' => 'Producto no encontrado.']);
     exit;
 }
-
 $stock_total = (int) $result->fetch_assoc()['stock'];
 $stmt->close();
 
-// 2. Consultar cantidad actual en el carrito del usuario
+// 2. Obtener cantidad actual del usuario en carrito
 $stmt = $mysqli->prepare("SELECT cantidad FROM carrito WHERE id_usuario = ? AND id_producto = ?");
 $stmt->bind_param("ii", $id_usuario, $id_producto);
 $stmt->execute();
@@ -37,33 +35,34 @@ $result = $stmt->get_result();
 $cantidad_actual_usuario = $result->num_rows > 0 ? (int) $result->fetch_assoc()['cantidad'] : 0;
 $stmt->close();
 
-// 3. Consultar reservas activas de otros usuarios (últimos 60 min)
+// 3. Obtener reservas activas (todos los usuarios) en los últimos 60 minutos
 $stmt = $mysqli->prepare("
-    SELECT SUM(cantidad) AS reservado 
+    SELECT SUM(cantidad) as total_reservado 
     FROM carrito 
     WHERE id_producto = ? 
-      AND id_usuario != ? 
-      AND TIMESTAMPDIFF(MINUTE, fecha, NOW()) <= 60
+    AND TIMESTAMPDIFF(MINUTE, fecha, NOW()) <= 60
 ");
-$stmt->bind_param("ii", $id_producto, $id_usuario);
+$stmt->bind_param("i", $id_producto);
 $stmt->execute();
 $result = $stmt->get_result();
-$reservado_otros = (int) ($result->fetch_assoc()['reservado'] ?? 0);
+$total_reservado = (int)($result->fetch_assoc()['total_reservado'] ?? 0);
 $stmt->close();
 
-// 4. Verificar si hay disponibilidad para añadir 1 más
-$stock_disponible = $stock_total - $reservado_otros;
+// 4. Calcular disponibilidad real para este usuario
+$stock_disponible_para_usuario = $stock_total - ($total_reservado - $cantidad_actual_usuario);
+
+// ¿Puede agregar 1 más?
 $proxima_cantidad = $cantidad_actual_usuario + 1;
 
-if ($proxima_cantidad > $stock_disponible) {
+if ($proxima_cantidad > $stock_disponible_para_usuario) {
     echo json_encode([
         'success' => false,
-        'message' => "No hay suficiente stock disponible. Solo quedan $stock_disponible unidades."
+        'message' => "No hay suficiente stock disponible. Solo puedes tener hasta $stock_disponible_para_usuario unidades."
     ]);
     exit;
 }
 
-// 5. Insertar o actualizar (y renovar fecha)
+// 5. Insertar o actualizar carrito
 $stmt = $mysqli->prepare("
     INSERT INTO carrito (id_usuario, id_producto, cantidad, fecha)
     VALUES (?, ?, 1, NOW())
@@ -80,5 +79,3 @@ if ($stmt->execute()) {
 $stmt->close();
 $mysqli->close();
 ?>
-
-
