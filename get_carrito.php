@@ -9,10 +9,13 @@ if ($id_usuario <= 0) {
     exit;
 }
 
-$sql = "SELECT c.id_producto, p.nombre, p.precio, c.cantidad
+$base_url = "https://api-cyclomart-1.onrender.com/";
+
+$sql = "SELECT c.id_producto, p.nombre, p.precio, c.cantidad, p.stock AS stock_total, p.imagen
         FROM carrito c
         JOIN productos p ON c.id_producto = p.id
         WHERE c.id_usuario = ?";
+
 $stmt = $mysqli->prepare($sql);
 $stmt->bind_param("i", $id_usuario);
 $stmt->execute();
@@ -21,15 +24,19 @@ $result = $stmt->get_result();
 $carrito = [];
 
 while ($row = $result->fetch_assoc()) {
+    if (!empty($row['imagen'])) {
+        $row['imagen'] = $base_url . $row['imagen'];
+    }
     $carrito[] = [
-        'id' => $row['id_producto'],
+        'id' => (int)$row['id_producto'],
         'nombre' => $row['nombre'],
         'precio' => (float)$row['precio'],
-        'cantidad' => (int)$row['cantidad']
+        'cantidad' => (int)$row['cantidad'],
+        'stock_total' => (int)$row['stock_total'],
+        'imagen' => $row['imagen'] ?? ''
     ];
 }
 
-// Cierra el statement y la conexión
 $stmt->close();
 $mysqli->close();
 
