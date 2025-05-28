@@ -14,45 +14,51 @@ if ($id_usuario === null || $id_producto === null || $cantidad === null) {
     exit;
 }
 
-// Validar stock disponible
-$sqlStock = "SELECT stock FROM productos WHERE id = ?";
-$stmtStock = $mysqli->prepare($sqlStock);
-$stmtStock->bind_param("i", $id_producto);
-$stmtStock->execute();
-$resultStock = $stmtStock->get_result();
-$producto = $resultStock->fetch_assoc();
+try {
+    $conn->beginTransaction();
 
-if (!$producto) {
-    echo json_encode(["success" => false, "message" => "Producto no encontrado."]);
-    exit;
-}
+    // Obtener stock disponible del producto
+    $sqlStock = "SELECT stock FROM productos WHERE id = ? FOR UPDATE";
+    $stmtStock = $conn->prepare($sqlStock);
+    $stmtStock->execute([$id_producto]);
+    $stock = $stmtStock->fetchColumn();
 
-$stockDisponible = (int)$producto['stock'];
-if ($cantidad > $stockDisponible) {
+    if ($stock === false) {
+        throw new Exception("Producto no encontrado.");
+    }
+
+    // Obtener cantidad actual en el carrito
+    $sqlCarrito = "SELECT cantidad FROM carrito WHERE id_usuario = ? AND id_producto = ?";
+    $stmtCarrito = $conn->prepare($sqlCarrito);
+    $stmtCarrito->execute([$id_usuario, $id_producto]);
+    $cantidadActual = $stmtCarrito->fetchColumn() ?? 0;
+
+    $diferencia = $cantidad - $cantidadActual;
+
+    if ($diferencia > 0 && $diferencia > $stock) {
+        throw new Exception("No hay suficiente stock disponible.");
+    }
+
+    // Actualizar la cantidad del producto en el carrito
+    $sqlUpdate = "UPDATE carrito SET cantidad = ? WHERE id_usuario = ? AND id_producto = ?";
+    $stmtUpdate = $conn->prepare($sqlUpdate);
+    $resultado = $stmtUpdate->execute([$cantidad, $id_usuario, $id_producto]);
+
+    if ($resultado) {
+        $conn->commit();
+        echo json_encode([
+            "success" => true,
+            "message" => "Cantidad actualizada correctamente."
+        ]);
+    } else {
+        throw new Exception("Error al actualizar la cantidad.");
+    }
+
+} catch (Exception $e) {
+    $conn->rollBack();
     echo json_encode([
         "success" => false,
-        "message" => "No hay suficiente stock disponible."
-    ]);
-    exit;
-}
-
-// Actualizar cantidad
-$sql = "UPDATE carrito SET cantidad = ? WHERE id_usuario = ? AND id_producto = ?";
-$stmt = $mysqli->prepare($sql);
-$stmt->bind_param("iii", $cantidad, $id_usuario, $id_producto);
-
-if ($stmt->execute()) {
-    echo json_encode([
-        "success" => true,
-        "message" => "Cantidad actualizada correctamente."
-    ]);
-} else {
-    echo json_encode([
-        "success" => false,
-        "message" => "Error al actualizar la cantidad."
+        "message" => $e->getMessage()
     ]);
 }
-
-$stmt->close();
-$mysqli->close();
 ?>
