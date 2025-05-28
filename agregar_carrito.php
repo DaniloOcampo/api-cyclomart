@@ -15,27 +15,29 @@ if ($id_usuario <= 0 || $id_producto <= 0) {
     exit;
 }
 
-// Verificar stock total
+// 1. Consultar stock total
 $stmt = $mysqli->prepare("SELECT stock FROM productos WHERE id = ?");
 $stmt->bind_param("i", $id_producto);
 $stmt->execute();
 $result = $stmt->get_result();
+
 if ($result->num_rows === 0) {
     echo json_encode(['success' => false, 'message' => 'Producto no encontrado.']);
     exit;
 }
+
 $stock_total = (int) $result->fetch_assoc()['stock'];
 $stmt->close();
 
-// Verificar cuántos hay ya en el carrito del usuario
+// 2. Consultar cantidad en el carrito actual del usuario
 $stmt = $mysqli->prepare("SELECT cantidad FROM carrito WHERE id_usuario = ? AND id_producto = ?");
 $stmt->bind_param("ii", $id_usuario, $id_producto);
 $stmt->execute();
 $result = $stmt->get_result();
-$cantidad_actual = $result->num_rows > 0 ? (int)$result->fetch_assoc()['cantidad'] : 0;
+$cantidad_actual_usuario = $result->num_rows > 0 ? (int) $result->fetch_assoc()['cantidad'] : 0;
 $stmt->close();
 
-// Verificar cuánto han reservado otros usuarios
+// 3. Consultar cantidad reservada por otros usuarios
 $stmt = $mysqli->prepare("SELECT SUM(cantidad) AS reservado FROM carrito WHERE id_producto = ? AND id_usuario != ?");
 $stmt->bind_param("ii", $id_producto, $id_usuario);
 $stmt->execute();
@@ -43,18 +45,24 @@ $result = $stmt->get_result();
 $reservado_otros = (int) ($result->fetch_assoc()['reservado'] ?? 0);
 $stmt->close();
 
+// 4. Calcular disponibilidad
 $stock_disponible = $stock_total - $reservado_otros;
+$proxima_cantidad = $cantidad_actual_usuario + 1;
 
-if ($cantidad_actual + 1 > $stock_disponible) {
-    echo json_encode(['success' => false, 'message' => "No hay suficiente stock disponible. Solo quedan $stock_disponible unidades."]);
+if ($proxima_cantidad > $stock_disponible) {
+    echo json_encode([
+        'success' => false,
+        'message' => "No hay suficiente stock disponible. Solo quedan $stock_disponible unidades."
+    ]);
     exit;
 }
 
-// Insertar o actualizar
-$sql = "INSERT INTO carrito (id_usuario, id_producto, cantidad)
-        VALUES (?, ?, 1)
-        ON DUPLICATE KEY UPDATE cantidad = cantidad + 1";
-$stmt = $mysqli->prepare($sql);
+// 5. Insertar o actualizar carrito
+$stmt = $mysqli->prepare("
+    INSERT INTO carrito (id_usuario, id_producto, cantidad)
+    VALUES (?, ?, 1)
+    ON DUPLICATE KEY UPDATE cantidad = cantidad + 1
+");
 $stmt->bind_param("ii", $id_usuario, $id_producto);
 
 if ($stmt->execute()) {
