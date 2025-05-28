@@ -24,21 +24,26 @@ $sql = "
         p.categoria_id, 
         c.nombre AS categoria,
         GREATEST(
-            p.stock - IFNULL((
+            p.stock 
+            - IFNULL((
                 SELECT SUM(c2.cantidad) 
                 FROM carrito c2 
                 WHERE 
                     c2.id_producto = p.id 
-                    AND c2.id_usuario != ? 
                     AND TIMESTAMPDIFF(MINUTE, c2.fecha, NOW()) <= ?
-            ), 0), 
+            ), 0)
+            + IFNULL((
+                SELECT cantidad 
+                FROM carrito 
+                WHERE id_usuario = ? AND id_producto = p.id
+            ), 0),
         0) AS stock
     FROM productos p
     JOIN categorias c ON p.categoria_id = c.id
 ";
 
 $stmt = $mysqli->prepare($sql);
-$stmt->bind_param("ii", $id_usuario, $minutos_expiracion);
+$stmt->bind_param("ii", $minutos_expiracion, $id_usuario);
 $stmt->execute();
 $result = $stmt->get_result();
 
