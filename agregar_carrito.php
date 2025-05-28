@@ -10,7 +10,9 @@ if ($id_usuario <= 0 || $id_producto <= 0) {
     exit;
 }
 
-// 1. Obtener stock real
+$minutos_expiracion = 60;
+
+// 1. Obtener stock total del producto
 $stmt = $mysqli->prepare("SELECT stock FROM productos WHERE id = ?");
 $stmt->bind_param("i", $id_producto);
 $stmt->execute();
@@ -27,16 +29,36 @@ $stmt = $mysqli->prepare("SELECT cantidad FROM carrito WHERE id_usuario = ? AND 
 $stmt->bind_param("ii", $id_usuario, $id_producto);
 $stmt->execute();
 $result = $stmt->get_result();
-$cantidad_actual = $result->num_rows > 0 ? (int) $result->fetch_assoc()['cantidad'] : 0;
+$cantidad_usuario = $result->num_rows > 0 ? (int) $result->fetch_assoc()['cantidad'] : 0;
 $stmt->close();
 
-// 3. Verificar si puede agregar 1 más
-if ($cantidad_actual + 1 > $stock_total) {
-    echo json_encode(['success' => false, 'message' => 'Has alcanzado el máximo permitido']);
+// 3. Obtener reservas activas de otros usuarios
+$stmt = $mysqli->prepare("
+    SELECT SUM(cantidad) as reservado
+    FROM carrito 
+    WHERE id_producto = ? 
+      AND id_usuario != ? 
+      AND TIMESTAMPDIFF(MINUTE, fecha, NOW()) <= ?
+");
+$stmt->bind_param("iii", $id_producto, $id_usuario, $minutos_expiracion);
+$stmt->execute();
+$result = $stmt->get_result();
+$reservado_otros = (int) ($result->fetch_assoc()['reservado'] ?? 0);
+$stmt->close();
+
+// 4. Calcular stock disponible para este usuario
+$stock_disponible = $stock_total - $reservado_otros;
+$proxima_cantidad = $cantidad_usuario + 1;
+
+if ($proxima_cantidad > $stock_disponible) {
+    echo json_encode([
+        'success' => false,
+        'message' => "Has alcanzado el máximo permitido"
+    ]);
     exit;
 }
 
-// 4. Insertar o actualizar en carrito (reserva temporal)
+// 5. Insertar o actualizar carrito
 $stmt = $mysqli->prepare("
     INSERT INTO carrito (id_usuario, id_producto, cantidad, fecha)
     VALUES (?, ?, 1, NOW())
