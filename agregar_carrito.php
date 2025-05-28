@@ -29,7 +29,7 @@ if ($result->num_rows === 0) {
 $stock_total = (int) $result->fetch_assoc()['stock'];
 $stmt->close();
 
-// 2. Consultar cantidad en el carrito actual del usuario
+// 2. Consultar cantidad actual en el carrito del usuario
 $stmt = $mysqli->prepare("SELECT cantidad FROM carrito WHERE id_usuario = ? AND id_producto = ?");
 $stmt->bind_param("ii", $id_usuario, $id_producto);
 $stmt->execute();
@@ -37,15 +37,21 @@ $result = $stmt->get_result();
 $cantidad_actual_usuario = $result->num_rows > 0 ? (int) $result->fetch_assoc()['cantidad'] : 0;
 $stmt->close();
 
-// 3. Consultar cantidad reservada por otros usuarios
-$stmt = $mysqli->prepare("SELECT SUM(cantidad) AS reservado FROM carrito WHERE id_producto = ? AND id_usuario != ?");
+// 3. Consultar reservas activas de otros usuarios (últimos 60 min)
+$stmt = $mysqli->prepare("
+    SELECT SUM(cantidad) AS reservado 
+    FROM carrito 
+    WHERE id_producto = ? 
+      AND id_usuario != ? 
+      AND TIMESTAMPDIFF(MINUTE, fecha, NOW()) <= 60
+");
 $stmt->bind_param("ii", $id_producto, $id_usuario);
 $stmt->execute();
 $result = $stmt->get_result();
 $reservado_otros = (int) ($result->fetch_assoc()['reservado'] ?? 0);
 $stmt->close();
 
-// 4. Calcular disponibilidad
+// 4. Verificar si hay disponibilidad para añadir 1 más
 $stock_disponible = $stock_total - $reservado_otros;
 $proxima_cantidad = $cantidad_actual_usuario + 1;
 
@@ -57,11 +63,11 @@ if ($proxima_cantidad > $stock_disponible) {
     exit;
 }
 
-// 5. Insertar o actualizar carrito
+// 5. Insertar o actualizar (y renovar fecha)
 $stmt = $mysqli->prepare("
-    INSERT INTO carrito (id_usuario, id_producto, cantidad)
-    VALUES (?, ?, 1)
-    ON DUPLICATE KEY UPDATE cantidad = cantidad + 1
+    INSERT INTO carrito (id_usuario, id_producto, cantidad, fecha)
+    VALUES (?, ?, 1, NOW())
+    ON DUPLICATE KEY UPDATE cantidad = cantidad + 1, fecha = NOW()
 ");
 $stmt->bind_param("ii", $id_usuario, $id_producto);
 

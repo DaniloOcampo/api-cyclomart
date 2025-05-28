@@ -26,8 +26,13 @@ if ($result->num_rows === 0) {
 $stock_total = (int)$result->fetch_assoc()['stock'];
 $stmt->close();
 
-// Obtener reserva de otros usuarios
-$stmt = $mysqli->prepare("SELECT SUM(cantidad) as reservado FROM carrito WHERE id_producto = ? AND id_usuario != ?");
+// Obtener reservas activas de otros usuarios (últimos 60 minutos)
+$stmt = $mysqli->prepare("
+    SELECT SUM(cantidad) as reservado 
+    FROM carrito 
+    WHERE id_producto = ? AND id_usuario != ? 
+    AND TIMESTAMPDIFF(MINUTE, fecha, NOW()) <= 60
+");
 $stmt->bind_param("ii", $id_producto, $id_usuario);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -44,8 +49,8 @@ if ($cantidad_nueva > $stock_disponible) {
     exit;
 }
 
-// Actualizar cantidad
-$stmt = $mysqli->prepare("UPDATE carrito SET cantidad = ? WHERE id_usuario = ? AND id_producto = ?");
+// Actualizar cantidad y renovar fecha de reserva
+$stmt = $mysqli->prepare("UPDATE carrito SET cantidad = ?, fecha = NOW() WHERE id_usuario = ? AND id_producto = ?");
 $stmt->bind_param("iii", $cantidad_nueva, $id_usuario, $id_producto);
 
 if ($stmt->execute()) {

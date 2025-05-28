@@ -10,6 +10,9 @@ $base_url = "https://api-cyclomart-1.onrender.com/";
 
 $id_usuario = isset($_GET['id_usuario']) ? intval($_GET['id_usuario']) : 0;
 
+// Tiempo en minutos para que una reserva sea válida
+$minutos_expiracion = 60;
+
 $sql = "
     SELECT 
         p.id, 
@@ -24,7 +27,10 @@ $sql = "
             p.stock - IFNULL((
                 SELECT SUM(c2.cantidad) 
                 FROM carrito c2 
-                WHERE c2.id_producto = p.id AND c2.id_usuario != ?
+                WHERE 
+                    c2.id_producto = p.id 
+                    AND c2.id_usuario != ? 
+                    AND TIMESTAMPDIFF(MINUTE, c2.fecha, NOW()) <= ?
             ), 0), 
         0) AS stock
     FROM productos p
@@ -32,7 +38,7 @@ $sql = "
 ";
 
 $stmt = $mysqli->prepare($sql);
-$stmt->bind_param("i", $id_usuario);
+$stmt->bind_param("ii", $id_usuario, $minutos_expiracion);
 $stmt->execute();
 $result = $stmt->get_result();
 
