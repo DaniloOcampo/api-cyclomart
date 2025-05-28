@@ -15,60 +15,56 @@ if ($id_usuario <= 0 || $id_producto <= 0) {
     exit;
 }
 
-// Inicia transacción para evitar condiciones de carrera
-$mysqli->begin_transaction();
+// Verificar stock total
+$stmt = $mysqli->prepare("SELECT stock FROM productos WHERE id = ?");
+$stmt->bind_param("i", $id_producto);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($result->num_rows === 0) {
+    echo json_encode(['success' => false, 'message' => 'Producto no encontrado.']);
+    exit;
+}
+$stock_total = (int) $result->fetch_assoc()['stock'];
+$stmt->close();
 
-try {
-    // Consulta el stock original del producto
-    $sql = "SELECT stock FROM productos WHERE id = ? FOR UPDATE";
-    $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("i", $id_producto);
-    $stmt->execute();
-    $result = $stmt->get_result();
+// Verificar cuántos hay ya en el carrito del usuario
+$stmt = $mysqli->prepare("SELECT cantidad FROM carrito WHERE id_usuario = ? AND id_producto = ?");
+$stmt->bind_param("ii", $id_usuario, $id_producto);
+$stmt->execute();
+$result = $stmt->get_result();
+$cantidad_actual = $result->num_rows > 0 ? (int)$result->fetch_assoc()['cantidad'] : 0;
+$stmt->close();
 
-    if ($result->num_rows === 0) {
-        throw new Exception('Producto no encontrado');
-    }
+// Verificar cuánto han reservado otros usuarios
+$stmt = $mysqli->prepare("SELECT SUM(cantidad) AS reservado FROM carrito WHERE id_producto = ? AND id_usuario != ?");
+$stmt->bind_param("ii", $id_producto, $id_usuario);
+$stmt->execute();
+$result = $stmt->get_result();
+$reservado_otros = (int) ($result->fetch_assoc()['reservado'] ?? 0);
+$stmt->close();
 
-    $stock = (int)$result->fetch_assoc()['stock'];
-    $stmt->close();
+$stock_disponible = $stock_total - $reservado_otros;
 
-    // Consultar la cantidad actual del producto en el carrito del usuario
-    $sql = "SELECT cantidad FROM carrito WHERE id_usuario = ? AND id_producto = ? FOR UPDATE";
-    $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("ii", $id_usuario, $id_producto);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    $cantidadEnCarrito = 0;
-    if ($result->num_rows > 0) {
-        $cantidadEnCarrito = (int)$result->fetch_assoc()['cantidad'];
-    }
-    $stmt->close();
-
-    // Verifica si hay suficiente stock disponible
-    if ($cantidadEnCarrito >= $stock) {
-        throw new Exception('Ya has añadido el máximo disponible de este producto');
-    }
-
-    // Insertar o actualizar carrito
-    $sql = "INSERT INTO carrito (id_usuario, id_producto, cantidad)
-            VALUES (?, ?, 1)
-            ON DUPLICATE KEY UPDATE cantidad = cantidad + 1";
-    $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("ii", $id_usuario, $id_producto);
-    if (!$stmt->execute()) {
-        throw new Exception('Error al guardar en el carrito');
-    }
-
-    $stmt->close();
-    $mysqli->commit();
-
-    echo json_encode(['success' => true, 'message' => 'Producto añadido al carrito']);
-} catch (Exception $e) {
-    $mysqli->rollback();
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+if ($cantidad_actual + 1 > $stock_disponible) {
+    echo json_encode(['success' => false, 'message' => "No hay suficiente stock disponible. Solo quedan $stock_disponible unidades."]);
+    exit;
 }
 
+// Insertar o actualizar
+$sql = "INSERT INTO carrito (id_usuario, id_producto, cantidad)
+        VALUES (?, ?, 1)
+        ON DUPLICATE KEY UPDATE cantidad = cantidad + 1";
+$stmt = $mysqli->prepare($sql);
+$stmt->bind_param("ii", $id_usuario, $id_producto);
+
+if ($stmt->execute()) {
+    echo json_encode(['success' => true, 'message' => 'Producto añadido al carrito']);
+} else {
+    echo json_encode(['success' => false, 'message' => 'Error al guardar en el carrito']);
+}
+
+$stmt->close();
 $mysqli->close();
+?>
+
 
