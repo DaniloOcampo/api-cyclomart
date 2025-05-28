@@ -15,10 +15,11 @@ if ($id_usuario <= 0 || $id_producto <= 0) {
     exit;
 }
 
+// Inicia transacción para evitar condiciones de carrera
 $mysqli->begin_transaction();
 
 try {
-    // Verificar stock con FOR UPDATE
+    // Consulta el stock original del producto
     $sql = "SELECT stock FROM productos WHERE id = ? FOR UPDATE";
     $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("i", $id_producto);
@@ -30,12 +31,25 @@ try {
     }
 
     $stock = (int)$result->fetch_assoc()['stock'];
+    $stmt->close();
 
-    if ($stock < 1) {
-        throw new Exception('Sin stock disponible');
+    // Consultar la cantidad actual del producto en el carrito del usuario
+    $sql = "SELECT cantidad FROM carrito WHERE id_usuario = ? AND id_producto = ? FOR UPDATE";
+    $stmt = $mysqli->prepare($sql);
+    $stmt->bind_param("ii", $id_usuario, $id_producto);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $cantidadEnCarrito = 0;
+    if ($result->num_rows > 0) {
+        $cantidadEnCarrito = (int)$result->fetch_assoc()['cantidad'];
     }
+    $stmt->close();
 
-    $stmt->close(); // Cerrar el primer statement
+    // Verifica si hay suficiente stock disponible
+    if ($cantidadEnCarrito >= $stock) {
+        throw new Exception('Ya has añadido el máximo disponible de este producto');
+    }
 
     // Insertar o actualizar carrito
     $sql = "INSERT INTO carrito (id_usuario, id_producto, cantidad)
@@ -47,17 +61,7 @@ try {
         throw new Exception('Error al guardar en el carrito');
     }
 
-    $stmt->close(); // Cerrar el segundo statement
-
-    // Actualizar stock
-    $sql = "UPDATE productos SET stock = stock - 1 WHERE id = ?";
-    $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("i", $id_producto);
-    if (!$stmt->execute()) {
-        throw new Exception('Error al actualizar el stock');
-    }
-
-    $stmt->close(); // Cerrar el tercer statement
+    $stmt->close();
     $mysqli->commit();
 
     echo json_encode(['success' => true, 'message' => 'Producto añadido al carrito']);
@@ -66,6 +70,5 @@ try {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
-$mysqli->close(); // ✅ Cerrar la conexión siempre al final
-?>
+$mysqli->close();
 
