@@ -20,22 +20,19 @@ $sql = "
         p.tipo, 
         p.categoria_id, 
         c.nombre AS categoria,
-        GREATEST(p.stock - IFNULL(SUM(car.cantidad), 0), 0) AS stock
+        GREATEST(
+            p.stock - IFNULL((
+                SELECT SUM(c2.cantidad) 
+                FROM carrito c2 
+                WHERE c2.id_producto = p.id AND c2.id_usuario != ?
+            ), 0), 
+        0) AS stock
     FROM productos p
     JOIN categorias c ON p.categoria_id = c.id
-    LEFT JOIN carrito car ON car.id_producto = p.id " . 
-    ($id_usuario > 0 ? "AND car.id_usuario != ?" : "") . "
-    GROUP BY p.id
 ";
 
-$stmt = $id_usuario > 0
-    ? $mysqli->prepare($sql)
-    : $mysqli->prepare(str_replace("AND car.id_usuario != ?", "", $sql));
-
-if ($id_usuario > 0) {
-    $stmt->bind_param("i", $id_usuario);
-}
-
+$stmt = $mysqli->prepare($sql);
+$stmt->bind_param("i", $id_usuario);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -52,4 +49,3 @@ echo json_encode($productos);
 $stmt->close();
 $mysqli->close();
 ?>
-
