@@ -12,7 +12,7 @@ if ($id_usuario <= 0 || $id_producto <= 0) {
 
 $minutos_expiracion = 60;
 
-// 1. Obtener stock total del producto
+// 1. Obtener stock total
 $stmt = $mysqli->prepare("SELECT stock FROM productos WHERE id = ?");
 $stmt->bind_param("i", $id_producto);
 $stmt->execute();
@@ -24,7 +24,7 @@ if ($result->num_rows === 0) {
 $stock_total = (int) $result->fetch_assoc()['stock'];
 $stmt->close();
 
-// 2. Obtener cantidad actual del usuario
+// 2. Cantidad actual del usuario
 $stmt = $mysqli->prepare("SELECT cantidad FROM carrito WHERE id_usuario = ? AND id_producto = ?");
 $stmt->bind_param("ii", $id_usuario, $id_producto);
 $stmt->execute();
@@ -32,7 +32,7 @@ $result = $stmt->get_result();
 $cantidad_usuario = $result->num_rows > 0 ? (int) $result->fetch_assoc()['cantidad'] : 0;
 $stmt->close();
 
-// 3. Obtener reservas activas de otros usuarios
+// 3. Reservas activas de otros usuarios
 $stmt = $mysqli->prepare("
     SELECT SUM(cantidad) as reservado
     FROM carrito 
@@ -46,32 +46,19 @@ $result = $stmt->get_result();
 $reservado_otros = (int) ($result->fetch_assoc()['reservado'] ?? 0);
 $stmt->close();
 
-// 4. Calcular stock disponible para este usuario
 $stock_disponible = $stock_total - $reservado_otros;
-$proxima_cantidad = $cantidad_usuario + 1;
 
-if ($proxima_cantidad > $stock_disponible) {
-    echo json_encode([
-        'success' => false,
-        'message' => "Has alcanzado el máximo permitido"
-    ]);
+if ($cantidad_usuario + 1 > $stock_disponible) {
+    echo json_encode(['success' => false, 'message' => 'Stock insuficiente']);
     exit;
 }
 
-// 5. Insertar o actualizar carrito
-$stmt = $mysqli->prepare("
-    INSERT INTO carrito (id_usuario, id_producto, cantidad, fecha)
-    VALUES (?, ?, 1, NOW())
-    ON DUPLICATE KEY UPDATE cantidad = cantidad + 1, fecha = NOW()
-");
-$stmt->bind_param("ii", $id_usuario, $id_producto);
-
-if ($stmt->execute()) {
-    echo json_encode(['success' => true, 'message' => 'Producto añadido al carrito']);
+if ($cantidad_usuario > 0) {
+    $stmt = $mysqli->prepare("UPDATE carrito SET cantidad = cantidad + 1, fecha = NOW() WHERE id_usuario = ? AND id_producto = ?");
 } else {
-    echo json_encode(['success' => false, 'message' => 'Error al agregar al carrito']);
+    $stmt = $mysqli->prepare("INSERT INTO carrito (id_usuario, id_producto, cantidad, fecha) VALUES (?, ?, 1, NOW())");
 }
+$stmt->bind_param("ii", $id_usuario, $id_producto);
+$stmt->execute();
 
-$stmt->close();
-$mysqli->close();
-?>
+echo json_encode(['success' => true, 'message' => 'Producto añadido al carrito']);

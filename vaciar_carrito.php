@@ -1,13 +1,13 @@
 <?php
 include 'db.php';
-header('Content-Type: application/json');
+header("Content-Type: application/json");
 
-$id_usuario = $_POST['id_usuario'] ?? null;
+$id_usuario = intval($_POST['id_usuario'] ?? 0);
 
-if ($id_usuario === null || intval($id_usuario) <= 0) {
+if ($id_usuario <= 0) {
     echo json_encode([
-        'success' => false,
-        'message' => 'ID de usuario inválido'
+        "success" => false,
+        "message" => "ID de usuario inválido."
     ]);
     exit;
 }
@@ -18,16 +18,15 @@ $stmt->bind_param("i", $id_usuario);
 
 if ($stmt->execute()) {
     echo json_encode([
-        'success' => true,
-        'message' => 'Carrito vaciado correctamente'
+        "success" => true,
+        "message" => "Carrito vaciado correctamente."
     ]);
 } else {
     echo json_encode([
-        'success' => false,
-        'message' => 'Error al vaciar carrito'
+        "success" => false,
+        "message" => "Error al vaciar el carrito."
     ]);
 }
 
 $stmt->close();
 $mysqli->close();
-?>
