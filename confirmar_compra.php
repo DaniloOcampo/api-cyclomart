@@ -23,7 +23,7 @@ foreach ($productos as $item) {
     $idProducto = $item['id_producto'];
     $cantidad = $item['cantidad'];
 
-    $stmt = $conn->prepare("SELECT precio FROM productos WHERE id = ?");
+    $stmt = $mysqli->prepare("SELECT precio FROM productos WHERE id = ?");
     $stmt->bind_param("i", $idProducto);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -36,7 +36,7 @@ foreach ($productos as $item) {
 }
 
 // Insertar pedido
-$stmt = $conn->prepare("INSERT INTO pedidos (id_usuario, total, metodo_pago) VALUES (?, ?, ?)");
+$stmt = $mysqlin->prepare("INSERT INTO pedidos (id_usuario, total, metodo_pago) VALUES (?, ?, ?)");
 $stmt->bind_param("ids", $idUsuario, $total, $metodoPago);
 if (!$stmt->execute()) {
     echo json_encode([
@@ -49,13 +49,13 @@ if (!$stmt->execute()) {
 $idPedido = $stmt->insert_id;
 
 // Insertar detalle del pedido
-$stmtDetalle = $conn->prepare("INSERT INTO detalle_pedido (id_pedido, id_producto, cantidad, subtotal) VALUES (?, ?, ?, ?)");
+$stmtDetalle = $mysqli->prepare("INSERT INTO detalle_pedido (id_pedido, id_producto, cantidad, subtotal) VALUES (?, ?, ?, ?)");
 foreach ($productos as $item) {
     $idProducto = $item['id_producto'];
     $cantidad = $item['cantidad'];
 
     // Obtener el precio de nuevo para registrar subtotal
-    $stmtPrecio = $conn->prepare("SELECT precio FROM productos WHERE id = ?");
+    $stmtPrecio = $mysqli->prepare("SELECT precio FROM productos WHERE id = ?");
     $stmtPrecio->bind_param("i", $idProducto);
     $stmtPrecio->execute();
     $res = $stmtPrecio->get_result();
@@ -68,7 +68,7 @@ foreach ($productos as $item) {
 }
 
 // Vaciar carrito del usuario
-$stmt = $conn->prepare("DELETE FROM carrito WHERE id_usuario = ?");
+$stmt = $mysqli->prepare("DELETE FROM carrito WHERE id_usuario = ?");
 $stmt->bind_param("i", $idUsuario);
 $stmt->execute();
 
