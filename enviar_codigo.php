@@ -54,14 +54,14 @@ $stmt2->execute();
 $mail = new PHPMailer(true);
 try {
     $mail->isSMTP();
-    $mail->Host = 'smtp.tuservidor.com';
+    $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
-    $mail->Username = 'tu@correo.com';
-    $mail->Password = 'tu_contraseña';
+    $mail->Username = 'cyclomart.envios@gmail.com';
+    $mail->Password = 'opim vwjr mrwu gnuo';
     $mail->SMTPSecure = 'tls';
     $mail->Port = 587;
 
-    $mail->setFrom('no-reply@tudominio.com', 'Soporte Cyclomart');
+    $mail->setFrom('cyclomart.envios@gmail.com', 'Soporte Cyclomart');
     $mail->addAddress($correo);
     $mail->isHTML(true);
     $mail->Subject = 'Código de verificación';
