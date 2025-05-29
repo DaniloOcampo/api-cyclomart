@@ -14,7 +14,7 @@ if (empty($correo) || empty($nueva)) {
 }
 
 // Verifica que el correo exista
-$stmt = $conexion->prepare("SELECT id FROM usuarios WHERE correo = ? LIMIT 1");
+$stmt = $mysqli->prepare("SELECT id FROM usuarios WHERE correo = ? LIMIT 1");
 $stmt->bind_param("s", $correo);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -28,7 +28,7 @@ if ($result->num_rows === 0) {
 $nuevaHash = password_hash($nueva, PASSWORD_DEFAULT);
 
 // Actualiza la contraseña
-$stmt = $conexion->prepare("UPDATE usuarios SET contrasena = ? WHERE correo = ?");
+$stmt = $mysqli->prepare("UPDATE usuarios SET contrasena = ? WHERE correo = ?");
 $stmt->bind_param("ss", $nuevaHash, $correo);
 $stmt->execute();
 

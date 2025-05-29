@@ -14,7 +14,7 @@ if (empty($correo) || empty($codigo)) {
 }
 
 // Verifica que exista un código válido para ese correo
-$stmt = $conexion->prepare("SELECT * FROM codigos_2fa WHERE correo = ? AND codigo = ? LIMIT 1");
+$stmt = $mysqli->prepare("SELECT * FROM codigos_2fa WHERE correo = ? AND codigo = ? LIMIT 1");
 $stmt->bind_param("ss", $correo, $codigo);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -25,7 +25,7 @@ if ($result->num_rows === 0) {
 }
 
 // Elimina el código para evitar reutilización
-$stmt = $conexion->prepare("DELETE FROM codigos_2fa WHERE correo = ?");
+$stmt = $mysqli->prepare("DELETE FROM codigos_2fa WHERE correo = ?");
 $stmt->bind_param("s", $correo);
 $stmt->execute();
 
