@@ -1,34 +1,36 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
-
 include 'db.php';
 $mysqli->set_charset("utf8");
 
 $base_url = "https://api-cyclomart-1.onrender.com/";
-
-$id_usuario = isset($_GET['id_usuario']) ? intval($_GET['id_usuario']) : 0;
 $minutos_expiracion = 60;
 
-// 1. Obtener todas las reservas activas
+// 1. Limpiar reservas vencidas (más de 60 minutos)
+$mysqli->query("DELETE FROM carrito WHERE TIMESTAMPDIFF(MINUTE, fecha, NOW()) > $minutos_expiracion");
+
+// 2. Obtener SUMA de reservas activas por producto (de todos los usuarios)
 $reservas = [];
 $sql = "
-    SELECT id_usuario, id_producto, cantidad
+    SELECT id_producto, SUM(cantidad) AS total_reservado
     FROM carrito
     WHERE TIMESTAMPDIFF(MINUTE, fecha, NOW()) <= ?
+    GROUP BY id_producto
 ";
 $stmt = $mysqli->prepare($sql);
 $stmt->bind_param("i", $minutos_expiracion);
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
-    $reservas[] = $row;
+    $reservas[(int)$row['id_producto']] = (int)$row['total_reservado'];
 }
 $stmt->close();
 
-// 2. Obtener productos y calcular stock disponible
+// 3. Obtener catálogo completo
 $productos = [];
 $sql = "
-    SELECT p.id, p.nombre, p.precio, p.imagen, p.descripcion, p.tipo, p.categoria_id, c.nombre AS categoria, p.stock
+    SELECT p.id, p.nombre, p.precio, p.imagen, p.descripcion, p.tipo,
+           p.categoria_id, c.nombre AS categoria, p.stock
     FROM productos p
     JOIN categorias c ON p.categoria_id = c.id
 ";
@@ -37,20 +39,14 @@ $result = $mysqli->query($sql);
 while ($row = $result->fetch_assoc()) {
     $id_producto = (int)$row['id'];
     $stock_total = (int)$row['stock'];
-    $reservado = 0;
-
-    foreach ($reservas as $r) {
-        if ((int)$r['id_producto'] === $id_producto && (int)$r['id_usuario'] !== $id_usuario) {
-            $reservado += (int)$r['cantidad'];
-        }
-    }
-
-    $row['stock_disponible'] = max($stock_total - $reservado, 0);
+    $reservado = $reservas[$id_producto] ?? 0;
+    $stock_disponible = max($stock_total - $reservado, 0);
 
     if (!empty($row['imagen'])) {
         $row['imagen'] = $base_url . $row['imagen'];
     }
 
+    $row['stock_disponible'] = $stock_disponible;
     $productos[] = $row;
 }
 
