@@ -175,6 +175,7 @@ $pdf->Output('F', $archivoPDF);
 require_once __DIR__ . '/fpdf/fpdf.php';
 require 'vendor/autoload.php';
 
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
