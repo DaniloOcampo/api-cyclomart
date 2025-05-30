@@ -70,7 +70,9 @@ $stmtPedido->close();
 foreach ($productos as $item) {
     $idProducto = $item['id_producto'];
     $cantidad = $item['cantidad'];
-     $subtotal = $item * $cantidad;
+    $precio = $item['precio']; 
+    $subtotal = $precio * $cantidad;
+
 
     // Insertar detalle
     $stmtDetalle = $mysqli->prepare("INSERT INTO detalle_pedido (id_pedido, id_producto, cantidad, subtotal) VALUES (?, ?, ?, ?)");
