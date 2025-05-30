@@ -8,6 +8,7 @@ $sql = "
         p.id AS id,
         p.fecha,
         p.metodo_pago,
+        p.estado,
         SUM(dp.cantidad) AS cantidadTotal,
         p.total
     FROM pedidos p
@@ -28,6 +29,7 @@ while ($row = $result->fetch_assoc()) {
         "id" => $row["id"],
         "fecha" => $row["fecha"],
         "metodoPago" => $row["metodo_pago"],
+        "estado" => $row["estado"],
         "cantidadTotal" => (int)$row["cantidadTotal"],
         "total" => (float)$row["total"]
     ];
