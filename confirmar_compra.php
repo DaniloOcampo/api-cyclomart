@@ -175,51 +175,6 @@ $pdf->Output('F', $archivoPDF);
 require_once __DIR__ . '/fpdf/fpdf.php';
 require 'vendor/autoload.php';
 
-$pdf = new FPDF();
-$pdf->AddPage();
-$pdf->SetFont('Arial', 'B', 16);
-$pdf->Cell(0, 10, 'Factura de Compra - Cyclomart', 0, 1, 'C');
-$pdf->SetFont('Arial', '', 12);
-$pdf->Cell(0, 10, 'Fecha: ' . $fecha, 0, 1);
-$pdf->Cell(0, 10, 'Pedido #: ' . $idPedido, 0, 1);
-$pdf->Ln(5);
-
-// Encabezado tabla
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(60, 10, 'Producto', 1);
-$pdf->Cell(30, 10, 'Cantidad', 1);
-$pdf->Cell(40, 10, 'Precio', 1);
-$pdf->Cell(40, 10, 'Subtotal', 1);
-$pdf->Ln();
-
-$pdf->SetFont('Arial', '', 12);
-foreach ($productos as $item) {
-    $idProducto = $item['id_producto'];
-    $cantidad = $item['cantidad'];
-    $precio = $item['precio'];
-    $subtotal = $precio * $cantidad;
-
-    $stmt = $mysqli->prepare("SELECT nombre FROM productos WHERE id = ?");
-    $stmt->bind_param("i", $idProducto);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-    $nombreProducto = $resultado->fetch_assoc()['nombre'];
-    $stmt->close();
-
-    $pdf->Cell(60, 10, $nombreProducto, 1);
-    $pdf->Cell(30, 10, $cantidad, 1);
-    $pdf->Cell(40, 10, number_format($precio, 2), 1);
-    $pdf->Cell(40, 10, number_format($subtotal, 2), 1);
-    $pdf->Ln();
-}
-
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(130, 10, 'TOTAL', 1);
-$pdf->Cell(40, 10, number_format($total, 2), 1);
-
-$archivoPDF = "factura_$idPedido.pdf";
-$pdf->Output('F', $archivoPDF);
-
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
