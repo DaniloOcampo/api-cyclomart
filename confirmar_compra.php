@@ -73,7 +73,7 @@ foreach ($productos as $item) {
 
     // Insertar detalle
     $stmtDetalle = $mysqli->prepare("INSERT INTO detalle_pedido (id_pedido, id_producto, cantidad, subtotal) VALUES (?, ?, ?, ?)");
-    $stmtDetalle->bind_param("iii", $idPedido, $idProducto, $cantidad, $subtotal);
+    $stmtDetalle->bind_param("iiid", $idPedido, $idProducto, $cantidad, $subtotal);
     $stmtDetalle->execute();
     $stmtDetalle->close();
 
