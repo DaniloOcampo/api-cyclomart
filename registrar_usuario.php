@@ -18,6 +18,7 @@ $apellido = $data->apellido;
 $correo = $data->correo;
 $documento = $data->documento;
 $contrasena = $data->contrasena;
+$rol = 'cliente'; // ✅ campo fijo por defecto
 
 $contrasena_encriptada = password_hash($contrasena, PASSWORD_DEFAULT);
 
@@ -40,8 +41,8 @@ if ($checkStmt->num_rows > 0) {
 }
 $checkStmt->close();
 
-// Insertar nuevo usuario
-$sql = "INSERT INTO usuarios (nombre, apellido, correo, contrasena, documento) VALUES (?, ?, ?, ?, ?)";
+// Insertar nuevo usuario con rol
+$sql = "INSERT INTO usuarios (nombre, apellido, correo, contrasena, documento, rol) VALUES (?, ?, ?, ?, ?, ?)";
 $stmt = $mysqli->prepare($sql);
 
 if ($stmt === false) {
@@ -49,7 +50,7 @@ if ($stmt === false) {
     exit();
 }
 
-$stmt->bind_param("sssss", $nombre, $apellido, $correo, $contrasena_encriptada, $documento);
+$stmt->bind_param("ssssss", $nombre, $apellido, $correo, $contrasena_encriptada, $documento, $rol);
 
 if ($stmt->execute()) {
     echo json_encode(["status" => "ok", "mensaje" => "Usuario registrado"]);
@@ -60,4 +61,3 @@ if ($stmt->execute()) {
 $stmt->close();
 $mysqli->close();
 ?>
-

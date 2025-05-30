@@ -42,8 +42,12 @@ $user = $result->fetch_assoc();
 
 // Verificar la contraseña
 if (password_verify($contrasena, $user['contrasena'])) {
-    unset($user['contrasena']); // No enviar la contraseña al cliente
-    echo json_encode(["status" => "ok", "mensaje" => "Login exitoso", "usuario" => $user]);
+    unset($user['contrasena']); // 🔐 Quitar la clave del resultado
+    echo json_encode([
+        "status" => "ok",
+        "mensaje" => "Login exitoso",
+        "usuario" => $user // Incluye automáticamente el campo 'rol'
+    ]);
 } else {
     echo json_encode(["status" => "error", "mensaje" => "Contraseña incorrecta"]);
 }
