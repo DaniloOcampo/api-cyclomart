@@ -64,6 +64,7 @@ try {
     $mail->setFrom('cyclomart.envios@gmail.com', 'Soporte Cyclomart');
     $mail->addAddress($correo);
     $mail->isHTML(true);
+    $mail->Encoding = 'base64';
     $mail->Subject = 'Código de verificación';
     $mail->Body = "
 <!DOCTYPE html>
