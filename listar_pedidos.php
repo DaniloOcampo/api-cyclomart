@@ -17,7 +17,7 @@ $sql = "
     ORDER BY p.fecha DESC
 ";
 
-$result = $conn->query($sql);
+$result = $mysqli->query($sql);
 
 if ($result && $result->num_rows > 0) {
     $pedidos = [];
