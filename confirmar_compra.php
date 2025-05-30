@@ -5,51 +5,84 @@ require 'db.php';
 $data = json_decode(file_get_contents("php://input"), true);
 
 if (
-    !isset($data['usuario_id']) ||
+    !isset($data['id_usuario']) ||
     !isset($data['productos']) ||
-    !isset($data['total']) ||
-    !isset($data['metodo_pago']) ||
-    empty($data['productos'])
+    !isset($data['metodo_pago'])
 ) {
     echo json_encode(["success" => false, "message" => "Datos incompletos"]);
     exit;
 }
 
-$usuario_id = $data['usuario_id'];
+$id_usuario = $data['id_usuario'];
 $productos = $data['productos'];
-$total = $data['total'];
 $metodo_pago = $data['metodo_pago'];
+$fecha = date("Y-m-d H:i:s");
 
-// Insertar en pedidos
-$pedidoSql = "INSERT INTO pedidos (usuario_id, fecha, metodo_pago, total) VALUES (?, NOW(), ?, ?)";
-$pedidoStmt = $mysqli->prepare($pedidoSql);
-$pedidoStmt->bind_param("isd", $usuario_id, $metodo_pago, $total);
+// Validación extra
+if (empty($productos)) {
+    echo json_encode(["success" => false, "message" => "El carrito está vacío"]);
+    exit;
+}
 
-if (!$pedidoStmt->execute()) {
+// Calcular total
+$total = 0;
+foreach ($productos as $item) {
+    $idProducto = $item['id_producto'];
+    $cantidad = $item['cantidad'];
+
+    // Obtener precio unitario actual desde la base de datos
+    $stmtPrecio = $mysqli->prepare("SELECT precio, stock FROM productos WHERE id = ?");
+    $stmtPrecio->bind_param("i", $idProducto);
+    $stmtPrecio->execute();
+    $resultado = $stmtPrecio->get_result();
+
+    if ($resultado->num_rows === 0) {
+        echo json_encode(["success" => false, "message" => "Producto no encontrado"]);
+        exit;
+    }
+
+    $productoInfo = $resultado->fetch_assoc();
+    $precio = $productoInfo['precio'];
+    $stockActual = $productoInfo['stock'];
+
+    if ($cantidad > $stockActual) {
+        echo json_encode(["success" => false, "message" => "Stock insuficiente para el producto ID $idProducto"]);
+        exit;
+    }
+
+    $total += $precio * $cantidad;
+    $stmtPrecio->close();
+}
+
+// Insertar pedido
+$stmtPedido = $mysqli->prepare("INSERT INTO pedidos (usuario_id, fecha, metodo_pago, total) VALUES (?, ?, ?, ?)");
+$stmtPedido->bind_param("issd", $id_usuario, $fecha, $metodo_pago, $total);
+
+if (!$stmtPedido->execute()) {
     echo json_encode(["success" => false, "message" => "Error al registrar el pedido"]);
     exit;
 }
 
-$pedido_id = $pedidoStmt->insert_id;
+$idPedido = $stmtPedido->insert_id;
+$stmtPedido->close();
 
-// Insertar detalles y descontar stock real
-foreach ($productos as $producto) {
-    $producto_id = $producto['id'];
-    $cantidad = $producto['cantidad'];
-    $precio = $producto['precio'];
+// Insertar detalles del pedido y actualizar stock
+foreach ($productos as $item) {
+    $idProducto = $item['id_producto'];
+    $cantidad = $item['cantidad'];
 
     // Insertar detalle
-    $detalleSql = "INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)";
-    $detalleStmt = $mysqli->prepare($detalleSql);
-    $detalleStmt->bind_param("iiid", $pedido_id, $producto_id, $cantidad, $precio);
-    $detalleStmt->execute();
+    $stmtDetalle = $mysqli->prepare("INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad) VALUES (?, ?, ?)");
+    $stmtDetalle->bind_param("iii", $idPedido, $idProducto, $cantidad);
+    $stmtDetalle->execute();
+    $stmtDetalle->close();
 
-    // Descontar del stock real
-    $updateStockSql = "UPDATE productos SET stock = stock - ? WHERE id = ?";
-    $updateStockStmt = $mysqli->prepare($updateStockSql);
-    $updateStockStmt->bind_param("ii", $cantidad, $producto_id);
-    $updateStockStmt->execute();
+    // Actualizar stock real
+    $stmtStock = $mysqli->prepare("UPDATE productos SET stock = stock - ? WHERE id = ?");
+    $stmtStock->bind_param("ii", $cantidad, $idProducto);
+    $stmtStock->execute();
+    $stmtStock->close();
 }
 
-echo json_encode(["success" => true, "message" => "Compra confirmada"]);
+echo json_encode(["success" => true, "message" => "Compra realizada con éxito"]);
 ?>
