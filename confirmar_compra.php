@@ -55,7 +55,7 @@ foreach ($productos as $item) {
 }
 
 // Insertar pedido
-$stmtPedido = $mysqli->prepare("INSERT INTO pedidos (usuario_id, fecha, metodo_pago, total) VALUES (?, ?, ?, ?)");
+$stmtPedido = $mysqli->prepare("INSERT INTO pedidos (id_usuario, fecha, metodo_pago, total) VALUES (?, ?, ?, ?)");
 $stmtPedido->bind_param("issd", $id_usuario, $fecha, $metodo_pago, $total);
 
 if (!$stmtPedido->execute()) {
@@ -72,7 +72,7 @@ foreach ($productos as $item) {
     $cantidad = $item['cantidad'];
 
     // Insertar detalle
-    $stmtDetalle = $mysqli->prepare("INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad) VALUES (?, ?, ?)");
+    $stmtDetalle = $mysqli->prepare("INSERT INTO detalle_pedido (id_pedido, id_producto, cantidad) VALUES (?, ?, ?)");
     $stmtDetalle->bind_param("iii", $idPedido, $idProducto, $cantidad);
     $stmtDetalle->execute();
     $stmtDetalle->close();
