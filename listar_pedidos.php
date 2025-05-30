@@ -5,17 +5,14 @@ require 'db.php';
 // Consulta para obtener los pedidos con total de productos
 $sql = "
     SELECT 
-        p.id,
-        p.fecha,
-        p.metodo_pago,
-        p.total,
-        p.estado,
-        COUNT(dp.id) AS cantidad_total
+        p.id, p.fecha, p.metodo_pago, p.total, p.estado,
+        COUNT(dp.id_producto) AS cantidad_total
     FROM pedidos p
-    LEFT JOIN detalle_pedido dp ON p.id = dp.pedido_id
+    JOIN detalle_pedido dp ON dp.id_pedido = p.id
     GROUP BY p.id
     ORDER BY p.fecha DESC
 ";
+
 
 $result = $mysqli->query($sql);
 
