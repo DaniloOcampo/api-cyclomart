@@ -100,9 +100,18 @@ foreach ($productos as $item) {
     $stmtStock->close();
 }
 
+// Eliminar los productos comprados del carrito
+foreach ($productos as $item) {
+    $idProducto = $item['id_producto'];
+    $stmtEliminar = $mysqli->prepare("DELETE FROM carrito WHERE id_usuario = ? AND id_producto = ?");
+    $stmtEliminar->bind_param("ii", $id_usuario, $idProducto);
+    $stmtEliminar->execute();
+    $stmtEliminar->close();
+}
+
 
 // Generar y enviar factura por correo con FPDF y PHPMailer
-require 'fpdf/fpdf.php';
+require_once __DIR__ . '/fpdf/fpdf.php';
 require 'vendor/autoload.php';
 
 $pdf = new FPDF();
